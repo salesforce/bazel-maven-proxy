@@ -1,0 +1,3 @@
+# ignore local files for testing
+/*.yaml
+/*.yml

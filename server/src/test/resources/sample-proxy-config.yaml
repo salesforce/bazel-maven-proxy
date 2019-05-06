@@ -1,0 +1,11 @@
+# Sample Proxy Configuration
+
+# all proxies are specified under 'mavenRepositories'
+mavenRepositories:
+
+   # the id of a Maven repository
+   # - used as part of the final proxy url: https://localhost:8499/maven/server1
+   # - used to lookup username/password info from Maven's ~/.m2/settings.xml
+   server1:
+      url: https://my.maven.server
+
