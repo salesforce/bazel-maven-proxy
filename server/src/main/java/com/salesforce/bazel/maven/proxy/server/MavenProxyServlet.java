@@ -157,8 +157,12 @@ public class MavenProxyServlet extends HttpServlet {
 	}
 
 	private File findInLocalCache(String path) {
-		if ((mavenCache == null) || (path == null) || path.isBlank())
+		if ((mavenCache == null) || (path == null) || path.isBlank() || path.equals("/"))
 			return null;
+
+		if (path.startsWith("/")) {
+			path = path.substring(1);
+		}
 
 		return mavenCache.get(get(path));
 	}
