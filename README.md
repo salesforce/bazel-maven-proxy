@@ -15,7 +15,7 @@ A local (read-only) proxy for Bazel to access Maven resources behind a secure re
 
 * Java 11 is required: `export JAVA_HOME=<path/to/JDK11>` with path to JDK 11
 * Build: `mvn clean package`
-* Run: `server/target/bazel-maven-proxy-server-1.0.0-SNAPSHOT-standalone.jar --help`
+* Run: `server/target/bazel-maven-proxy-server-1.0.0-SNAPSHOT-standalone.jar --help` (on Linux/macOS)
 
 ## Command Line Arguments
 
