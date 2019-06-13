@@ -71,7 +71,7 @@ Please ensure that your `~/.m2/settings.xml` has an entry for your repository li
           <url>https://my-central-mirror.internal.network.com/..</url>
         </repository>
         <repository>
-          <id>nexus</id>
+          <id>mynexus</id>
           <url>https://my-nexus-repo.internal.network.com/..</url>
         </repository>
       </repositories>
