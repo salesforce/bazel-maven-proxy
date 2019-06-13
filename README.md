@@ -2,7 +2,7 @@
 A local (read-only) proxy for Bazel to access Maven resources behind a secure repository or from the local Maven repo
 
 ## Features
-* Provides password-less access to Maven repositories requiring authentication via `https://127.0.0.1:8499/maven/...`
+* Provides password-less access to Maven repositories requiring authentication via `https://127.0.0.1:8499/maven/<repository-id>/...` (the `repository-id` is used from `~/.m2/settings.xml`)
 * Reads Maven authentication information from `~/.m2/settings.xml`
 * Delivers artifacts from local Maven repository (`~/.m2/repository`) when available
 * Secure by default
