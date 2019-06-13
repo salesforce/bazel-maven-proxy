@@ -39,3 +39,45 @@ Starts the Bazel Maven Proxy
                       path to Maven's settings.xml to read repositories and
                         authentication informatiom from (default: ~/.m2/settings.xml)
 ```
+
+## How to Use
+
+Please ensure that your `~/.m2/settings.xml` has an entry for your repository like this:
+```
+  ...
+  <servers>
+    <server>
+      <id>mynexus</id>
+      <username>...</username>
+      <password>...</password>
+    </server>
+    <server>
+      <id>central</id>
+      <username>...</username>
+      <password>...</password>
+    </server>
+  </servers>
+  ...
+
+  <profiles>
+    <profile>
+      <id>mynexus</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>https://my-central-mirror.internal.network.com/..</url>
+        </repository>
+        <repository>
+          <id>nexus</id>
+          <url>https://my-nexus-repo.internal.network.com/..</url>
+        </repository>
+      </repositories>
+      ...
+    </profile>
+  </profiles>
+```
+
+Then in Bazel (or anywhere else) you can refer to these as `http(s)://localhost:<port>/maven/mynexus/..` and `http(s)://localhost:<port>/maven/central/..`.
