@@ -1,0 +1,1 @@
+build --javabase=@bazel_tools//tools/jdk:remote_jdk11
