@@ -1,1 +1,6 @@
+# JDK 11
 build --javabase=@bazel_tools//tools/jdk:remote_jdk11
+
+# create a .bazelrc-local to customize further
+# (eg., override JDK for bazel run with "run --javabase=@local_jdk//:jdk" to use JAVA_HOME)
+try-import .bazelrc-local
