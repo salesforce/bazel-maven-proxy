@@ -2,5 +2,12 @@
 build --javabase=@bazel_tools//tools/jdk:remote_jdk11
 
 # create a .bazelrc-local to customize further
-# (eg., override JDK for bazel run with "run --javabase=@local_jdk//:jdk" to use JAVA_HOME)
 try-import .bazelrc-local
+
+# some examples:
+#
+# override JDK for bazel run with "run --javabase=@local_jdk//:jdk" to use JAVA_HOME
+#
+# use this if you want Bazel to use a specific JDK for running the Maven proxy
+#build --javabase=@bazel_tools//tools/jdk:absolute_javabase
+#build --define=ABSOLUTE_JAVABASE=/Library/Java/JavaVirtualMachines/.../Contents/Home
