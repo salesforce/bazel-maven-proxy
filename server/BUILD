@@ -39,6 +39,7 @@ java_junit5_test(
     resources = glob(["src/test/resources/**"]),
     deps = [
     	":server",
+		"@maven//:commons_io_commons_io",
     ],
     visibility = ["//visibility:__subpackages__"],
     runtime_deps = [

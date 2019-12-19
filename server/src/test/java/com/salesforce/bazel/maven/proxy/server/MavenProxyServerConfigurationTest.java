@@ -3,16 +3,22 @@ package com.salesforce.bazel.maven.proxy.server;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.salesforce.bazel.maven.proxy.server.MavenProxyServerConfiguration.MavenRepository;
 
 public class MavenProxyServerConfigurationTest {
+
+	@TempDir
+	static Path tempDirectory;
 
 	private static Path sampleConfigFile;
 
@@ -20,7 +26,13 @@ public class MavenProxyServerConfigurationTest {
 	protected static void setUp() throws Exception {
 		URL sampleConfigFileUrl = MavenProxyServerConfigurationTest.class.getResource("/sample-proxy-config.yaml");
 		assertNotNull(sampleConfigFileUrl, "sample-proxy-config.yaml is missing");
-		sampleConfigFile = Path.of(sampleConfigFileUrl.toURI());
+
+		Path tempConfigFile = tempDirectory.resolve("test-maven-settings.xml");
+		try (InputStream in = sampleConfigFileUrl.openStream()) {
+			FileUtils.copyInputStreamToFile(in, tempConfigFile.toFile());
+		}
+
+		sampleConfigFile = tempConfigFile;
 	}
 
 	@Test

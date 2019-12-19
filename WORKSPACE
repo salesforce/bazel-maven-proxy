@@ -41,6 +41,7 @@ maven_install(
     artifacts = [
 		"info.picocli:picocli:3.8.2",
 		"org.apache.commons:commons-compress:1.18",
+		"commons-io:commons-io:2.6",
 		"org.eclipse.jetty.http2:http2-client:9.4.18.v20190429",
 		"org.eclipse.jetty.http2:http2-http-client-transport:9.4.18.v20190429",
 		"org.eclipse.jetty.http2:http2-server:9.4.18.v20190429",

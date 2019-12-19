@@ -4,20 +4,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.Repository;
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.ServerCredentials;
 
 public class MavenSettingsXmlParserTest {
+
+	@TempDir
+	static Path tempDirectory;
 
 	private static Path sampleSettingsFile;
 
@@ -25,7 +31,13 @@ public class MavenSettingsXmlParserTest {
 	protected static void setUp() throws Exception {
 		URL sampleSettingsFileUrl = MavenSettingsXmlParserTest.class.getResource("/sample-maven-settings.xml");
 		assertNotNull(sampleSettingsFileUrl, "sample settings.xml is missing");
-		sampleSettingsFile = Path.of(sampleSettingsFileUrl.toURI());
+
+		Path tempSettingsXml = tempDirectory.resolve("test-maven-settings.xml");
+		try (InputStream in = sampleSettingsFileUrl.openStream()) {
+			FileUtils.copyInputStreamToFile(in, tempSettingsXml.toFile());
+		}
+
+		sampleSettingsFile = tempSettingsXml;
 	}
 
 	@Test

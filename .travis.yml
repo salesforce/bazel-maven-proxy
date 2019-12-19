@@ -38,6 +38,5 @@ before_install:
     rm -f install.sh
   - cp .bazelrc-travis .bazelrc-local
 script:
-  - |
-    bash bazel test //...
-    
+  - bash bazel test //...
+  
