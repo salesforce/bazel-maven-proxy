@@ -30,6 +30,11 @@ http_archive(
 )
 load("@rules_jvm_external//:defs.bzl", "maven_install")
 
+# JUnit 5 Support
+# (also needs to load tools/junit5/defs.bzl)
+JUNIT5_API_VERSION = "5.5.2"
+JUNIT5_PLATFORM_VERSION="1.5.2"
+
 # Maven Dependencies
 maven_install(
     name = "maven",
@@ -44,11 +49,21 @@ maven_install(
 		"org.eclipse.jetty:jetty-proxy:9.4.18.v20190429",
 		"org.eclipse.jetty:jetty-server:9.4.18.v20190429",
 		"org.eclipse.jetty:jetty-servlet:9.4.18.v20190429",
-		"org.junit.jupiter:junit-jupiter-api:5.3.2",
-		"org.junit.jupiter:junit-jupiter-engine:5.3.2",
 		"org.slf4j:slf4j-api:1.7.25",
 		"org.slf4j:slf4j-simple:1.7.25",
 		"org.yaml:snakeyaml:1.24",
+
+		# JUnit 5
+		"org.junit.jupiter:junit-jupiter-api:" + JUNIT5_API_VERSION,
+        "org.junit.jupiter:junit-jupiter-engine:" + JUNIT5_API_VERSION,
+        "org.junit.jupiter:junit-jupiter-params:" + JUNIT5_API_VERSION,
+        "org.apiguardian:apiguardian-api:1.1.0",
+        "org.opentest4j:opentest4j:1.2.0",
+        "org.junit.platform:junit-platform-commons:"+ JUNIT5_PLATFORM_VERSION,
+        "org.junit.platform:junit-platform-console:"+ JUNIT5_PLATFORM_VERSION,
+        "org.junit.platform:junit-platform-engine:"+ JUNIT5_PLATFORM_VERSION,
+        "org.junit.platform:junit-platform-launcher:"+ JUNIT5_PLATFORM_VERSION,
+        "org.junit.platform:junit-platform-suite-api:"+ JUNIT5_PLATFORM_VERSION,
     ],
     repositories = [
 	    "https://jcenter.bintray.com/",

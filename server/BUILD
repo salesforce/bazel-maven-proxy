@@ -27,3 +27,21 @@ java_library(
     	"@maven//:org_slf4j_slf4j_simple",
     ]
 )
+
+load("//tools/junit5:defs.bzl", "java_junit5_test")
+java_junit5_test(
+    name = "server_tests",
+    srcs = glob(["src/test/java/**/*.java"]),
+    test_packages = [
+        "com.salesforce.bazel.maven.proxy.server",
+        "com.salesforce.bazel.maven.settings",
+    ],
+    resources = glob(["src/test/resources/**"]),
+    deps = [
+    	":server",
+    ],
+    visibility = ["//visibility:__subpackages__"],
+    runtime_deps = [
+    	"@maven//:org_slf4j_slf4j_simple",
+    ]
+)
