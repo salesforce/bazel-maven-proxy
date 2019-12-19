@@ -10,6 +10,6 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Run Tests
-      uses: ngalaiko/bazel-action@2.0.0
+      uses: guw/bazel-action@master
       with:
         args: test //...
