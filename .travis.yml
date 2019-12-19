@@ -36,7 +36,7 @@ before_install:
     chmod +x install.sh
     ./install.sh --user
     rm -f install.sh
-  - cp .bazelrc.travis .bazelrc-local
+  - cp .bazelrc-travis .bazelrc-local
 script:
   - |
     bash bazel test //...
