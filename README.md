@@ -8,14 +8,18 @@ A local (read-only) proxy for Bazel to access Maven resources behind a secure re
 * Secure by default
     * Only listens locally on `127.0.0.1` (no external access possible)
     * Encrypted access with self-signed certificate via `https://localhost:8499/`
-* Unsecure access must be explicetly enable via command line parameter
+* Unsecure access must be explicitly enable via command line parameter
 * Supports HTTP/2 access and can talk HTTP/2 or HTTP/1.1 to back-end Maven repositories
 
 ## Getting Started
 
-* Java 11 is required: `export JAVA_HOME=<path/to/JDK11>` with path to JDK 11 and ensure `java --version` returns something  >= 11
 * Build: `bazel build //:maven_proxy`
-* Run: `bazel build //:maven_proxy -- --help`  (on Linux/macOS)
+* Run: `bazel run //:maven_proxy -- --help`  (on Linux/macOS)
+
+### Different JDK
+
+In case you need to use a different JDK you can create a `.bazelrc-local` file.
+Please have a look at `.bazelrc` for further instructions.
 
 ## Command Line Arguments
 

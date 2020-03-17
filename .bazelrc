@@ -2,7 +2,7 @@
 build --javabase=@bazel_tools//tools/jdk:remote_jdk11
 
 # create a .bazelrc-local to customize further
-try-import .bazelrc-local
+try-import %workspace%/.bazelrc-local
 
 # some examples:
 #
