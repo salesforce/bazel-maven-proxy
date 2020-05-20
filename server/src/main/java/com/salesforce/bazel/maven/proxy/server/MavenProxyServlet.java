@@ -30,6 +30,9 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
@@ -43,6 +46,7 @@ import java.nio.channels.FileChannel.MapMode;
 import java.time.Duration;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -199,6 +203,35 @@ public class MavenProxyServlet extends HttpServlet {
 		Builder httpClientBuilder = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).connectTimeout(Duration.ofSeconds(5));
 		if (authenticator != null) {
 			httpClientBuilder.authenticator(authenticator);
+		}
+
+		// if the JVM is not instructed to use system settings on purpose we
+		// replicate Bazel behavior, i.e.
+		// we read proxy settings from the environment
+		if (!Boolean.getBoolean("java.net.useSystemProxies")) {
+			ProxyHelper proxyHelper = new ProxyHelper(System.getenv());
+			httpClientBuilder.proxy(new ProxySelector() {
+
+				@Override
+				public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+					LOG.debug("Connect failed: {} {} - {}", uri, sa, ioe.getMessage(), ioe);
+				}
+
+				@Override
+				public List<Proxy> select(URI uri) {
+					try {
+						Proxy proxy = proxyHelper.createProxyIfNeeded(uri);
+						if (proxy != Proxy.NO_PROXY) {
+							LOG.debug("Using proxy '{}' for URI '{}'", proxy, uri);
+						} else {
+							LOG.debug("Using direct connection to URI '{}'", uri);
+						}
+						return List.of(proxy);
+					} catch (IOException e) {
+						throw new IllegalStateException("Unable to create proxy!", e);
+					}
+				}
+			});
 		}
 
 		httpClient = httpClientBuilder.build();

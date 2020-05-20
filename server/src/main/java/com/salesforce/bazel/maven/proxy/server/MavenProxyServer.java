@@ -66,9 +66,6 @@ public class MavenProxyServer implements Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
-		// use system proxies
-		System.setProperty("java.net.useSystemProxies", "true");
-
 		// configure and start Jetty
 		Server server = startJetty();
 
