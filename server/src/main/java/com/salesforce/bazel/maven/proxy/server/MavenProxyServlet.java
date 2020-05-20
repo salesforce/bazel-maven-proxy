@@ -211,6 +211,7 @@ public class MavenProxyServlet extends HttpServlet {
 		// we read proxy settings from the environment
 		if (!Boolean.getBoolean("java.net.useSystemProxies")) {
 			ProxyHelper proxyHelper = new ProxyHelper(System.getenv());
+			LOG.debug("Configuring proxy selector from environment variables: {}", proxyHelper);
 			httpClientBuilder.proxy(new ProxySelector() {
 
 				@Override

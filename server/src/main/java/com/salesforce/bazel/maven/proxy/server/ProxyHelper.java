@@ -25,10 +25,15 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Helper class for setting up a proxy server for network communication
  */
 public class ProxyHelper {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ProxyHelper.class);
 
 	/**
 	 * This method takes a proxyAddress as a String (ex.
@@ -145,13 +150,11 @@ public class ProxyHelper {
 	 */
 	public Proxy createProxyIfNeeded(URI requestedUrl) throws IOException {
 		String proxyAddress = null;
-		String noProxyUrl = env.get("no_proxy");
-		if (isNullOrEmpty(noProxyUrl)) {
-			noProxyUrl = env.get("NO_PROXY");
-		}
+		String noProxyUrl = getNoProxy();
 		if (!isNullOrEmpty(noProxyUrl)) {
 			String[] noProxyUrlArray = noProxyUrl.split(",");
 			String requestedHost = requestedUrl.getHost();
+			LOG.debug("Checking host '{}' against whitelist '{}'", requestedHost, noProxyUrlArray);
 			for (String element : noProxyUrlArray) {
 				if (element.startsWith(".")) {
 					// This entry applies to sub-domains only.
@@ -166,16 +169,41 @@ public class ProxyHelper {
 			}
 		}
 		if (isProtocol(requestedUrl, "https")) {
-			proxyAddress = env.get("https_proxy");
-			if (isNullOrEmpty(proxyAddress)) {
-				proxyAddress = env.get("HTTPS_PROXY");
-			}
+			proxyAddress = getHttpsProxy();
 		} else if (isProtocol(requestedUrl, "http")) {
-			proxyAddress = env.get("http_proxy");
-			if (isNullOrEmpty(proxyAddress)) {
-				proxyAddress = env.get("HTTP_PROXY");
-			}
+			proxyAddress = getHttpProxy();
 		}
 		return createProxy(proxyAddress);
+	}
+
+	private String getHttpProxy() {
+		String proxyAddress;
+		proxyAddress = env.get("http_proxy");
+		if (isNullOrEmpty(proxyAddress)) {
+			proxyAddress = env.get("HTTP_PROXY");
+		}
+		return proxyAddress;
+	}
+
+	private String getHttpsProxy() {
+		String proxyAddress;
+		proxyAddress = env.get("https_proxy");
+		if (isNullOrEmpty(proxyAddress)) {
+			proxyAddress = env.get("HTTPS_PROXY");
+		}
+		return proxyAddress;
+	}
+
+	private String getNoProxy() {
+		String noProxyUrl = env.get("no_proxy");
+		if (isNullOrEmpty(noProxyUrl)) {
+			noProxyUrl = env.get("NO_PROXY");
+		}
+		return noProxyUrl;
+	}
+
+	@Override
+	public String toString() {
+		return "ProxyHelper[no_proxy=" + getNoProxy() + ", http_proxy=" + getHttpProxy() + ", https_proxy=" + getHttpsProxy() + "]";
 	}
 }
