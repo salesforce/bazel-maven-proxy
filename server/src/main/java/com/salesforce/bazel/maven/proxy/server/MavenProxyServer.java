@@ -151,7 +151,7 @@ public class MavenProxyServer implements Callable<Void> {
 		String prefix = format("/maven/%s", id);
 		String proxyTo = url.toExternalForm();
 
-		LOG.debug("Registering Maven Proxy Repository {} -> {}", prefix, proxyTo);
+		LOG.debug("Registering Maven Proxy Repository {} -> {} (using credentials {})", prefix, proxyTo, serverCredentials != null ? serverCredentials.id : "none");
 
 		ServletHolder proxyServlet = new ServletHolder(MavenProxyServlet.class);
 		proxyServlet.setInitParameter(MavenProxyServlet.PROXY_TO, proxyTo);

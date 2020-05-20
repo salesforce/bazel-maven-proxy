@@ -160,11 +160,11 @@ public class MavenSettingsXmlParser {
 		});
 
 		if ((repository.id == null) || (repository.url == null)) {
-			LOG.trace("Ignoring incomplete repository: %s:%s", repository.id, repository.url);
+			LOG.trace("Ignoring incomplete repository: {}:{}", repository.id, repository.url);
 			return;
 		}
 
-		LOG.trace("Found repository: %s:%s", repository.id, repository.url);
+		LOG.trace("Found repository: {}:{}", repository.id, repository.url);
 		repositoryHandler.onRepository(repository);
 	}
 
@@ -182,11 +182,11 @@ public class MavenSettingsXmlParser {
 		});
 
 		if ((serverCredentials.id == null) || (serverCredentials.username == null) || (serverCredentials.password == null)) {
-			LOG.trace("Ignoring incomplete server credentials: %s:%s:%s", serverCredentials.id, serverCredentials.username, serverCredentials.password != null ? "******" : null);
+			LOG.trace("Ignoring incomplete server credentials: {}:{}:{}", serverCredentials.id, serverCredentials.username, serverCredentials.password != null ? "******" : null);
 			return;
 		}
 
-		LOG.trace("Found server credentials: %s:%s:%s", serverCredentials.id, serverCredentials.username, serverCredentials.password != null ? "******" : null);
+		LOG.trace("Found server credentials: {}:{}:{}", serverCredentials.id, serverCredentials.username, serverCredentials.password != null ? "******" : null);
 		credentialsHandler.onServerCredentials(serverCredentials);
 	}
 

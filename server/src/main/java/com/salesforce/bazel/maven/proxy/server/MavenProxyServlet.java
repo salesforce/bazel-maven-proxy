@@ -202,6 +202,7 @@ public class MavenProxyServlet extends HttpServlet {
 
 		Builder httpClientBuilder = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).connectTimeout(Duration.ofSeconds(5));
 		if (authenticator != null) {
+			LOG.debug("Using autentication: {}", authenticator);
 			httpClientBuilder.authenticator(authenticator);
 		}
 
