@@ -156,6 +156,7 @@ public class ProxyHelper {
 			String requestedHost = requestedUrl.getHost();
 			LOG.debug("Checking host '{}' against whitelist '{}'", requestedHost, noProxyUrlArray);
 			for (String element : noProxyUrlArray) {
+				element = element.strip();
 				if (element.startsWith(".")) {
 					// This entry applies to sub-domains only.
 					if (requestedHost.endsWith(element))
