@@ -20,7 +20,7 @@
 
     <slf4j-version>1.7.25</slf4j-version>
     <picocli-version>3.8.2</picocli-version>
-    <jetty-version>9.4.18.v20190429</jetty-version>
+    <jetty-version>9.4.35.v20201120</jetty-version>
     <junit-jupiter-version>5.5.2</junit-jupiter-version>
   </properties>
 
