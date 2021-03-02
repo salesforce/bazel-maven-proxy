@@ -86,7 +86,7 @@ public class MavenProxyServer implements Callable<Void> {
 		httpConfig.setSecurePort(port);
 
 		// SSL context factory (HTTPS and HTTP/2)
-		SslContextFactory sslContextFactory = new SslContextFactory.Server();
+		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 		sslContextFactory.setKeyStorePath(MavenProxyServer.class.getResource("localhost.pkcs12").toExternalForm());
 		sslContextFactory.setKeyStorePassword("localhost");
 		sslContextFactory.setKeyStoreType("pkcs12");

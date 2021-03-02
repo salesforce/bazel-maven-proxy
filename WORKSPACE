@@ -20,8 +20,8 @@ versions.check(minimum_bazel_version = "0.25.1")
 
 
 # maven_install
-RULES_JVM_EXTERNAL_TAG = "2.1"
-RULES_JVM_EXTERNAL_SHA = "515ee5265387b88e4547b34a57393d2bcb1101314bcc5360ec7a482792556f42"
+RULES_JVM_EXTERNAL_TAG = "4.0"
+RULES_JVM_EXTERNAL_SHA = "31701ad93dbfe544d597dbe62c9a1fdd76d81d8a9150c2bf1ecf928ecdf97169"
 http_archive(
     name = "rules_jvm_external",
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
@@ -32,27 +32,26 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 
 # JUnit 5 Support
 # (also needs to load tools/junit5/defs.bzl)
-JUNIT5_API_VERSION = "5.5.2"
-JUNIT5_PLATFORM_VERSION="1.5.2"
+JUNIT5_API_VERSION = "5.7.1"
+JUNIT5_PLATFORM_VERSION="1.7.1"
 
 # Maven Dependencies
 maven_install(
     name = "maven",
     artifacts = [
-		"info.picocli:picocli:3.8.2",
-		"org.apache.commons:commons-compress:1.18",
-		"commons-io:commons-io:2.6",
-		"org.eclipse.jetty.http2:http2-client:9.4.18.v20190429",
-		"org.eclipse.jetty.http2:http2-http-client-transport:9.4.18.v20190429",
+		"info.picocli:picocli:4.6.1",
+		"commons-io:commons-io:2.8.0",
+		"org.eclipse.jetty.http2:http2-client:11.0.1",
+		"org.eclipse.jetty.http2:http2-http-client-transport:11.0.1",
 		"org.eclipse.jetty.http2:http2-server:9.4.18.v20190429",
-		"org.eclipse.jetty:jetty-alpn-java-server:9.4.18.v20190429",
-		"org.eclipse.jetty:jetty-alpn-server:9.4.18.v20190429",
-		"org.eclipse.jetty:jetty-proxy:9.4.18.v20190429",
-		"org.eclipse.jetty:jetty-server:9.4.18.v20190429",
-		"org.eclipse.jetty:jetty-servlet:9.4.18.v20190429",
-		"org.slf4j:slf4j-api:1.7.25",
-		"org.slf4j:slf4j-simple:1.7.25",
-		"org.yaml:snakeyaml:1.24",
+		"org.eclipse.jetty:jetty-alpn-java-server:11.0.1",
+		"org.eclipse.jetty:jetty-alpn-server:11.0.1",
+		"org.eclipse.jetty:jetty-proxy:11.0.1",
+		"org.eclipse.jetty:jetty-server:11.0.1",
+		"org.eclipse.jetty:jetty-servlet:11.0.1",
+		"org.slf4j:slf4j-api:1.7.30",
+		"org.slf4j:slf4j-simple:1.7.30",
+		"org.yaml:snakeyaml:1.28",
 
 		# JUnit 5
 		"org.junit.jupiter:junit-jupiter-api:" + JUNIT5_API_VERSION,
@@ -67,8 +66,12 @@ maven_install(
         "org.junit.platform:junit-platform-suite-api:"+ JUNIT5_PLATFORM_VERSION,
     ],
     repositories = [
-	    "https://jcenter.bintray.com/",
 	    "https://maven.google.com",
 	    "https://repo1.maven.org/maven2",
     ],
+    maven_install_json = "@bazel_maven_proxy//:maven_install.json",
 )
+
+# load pinned dependencies
+load("@maven//:defs.bzl", "pinned_maven_install")
+pinned_maven_install()
