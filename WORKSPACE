@@ -49,8 +49,8 @@ maven_install(
 		"org.eclipse.jetty:jetty-proxy:11.0.1",
 		"org.eclipse.jetty:jetty-server:11.0.1",
 		"org.eclipse.jetty:jetty-servlet:11.0.1",
-		"org.slf4j:slf4j-api:1.7.30",
-		"org.slf4j:slf4j-simple:1.7.30",
+		"org.slf4j:slf4j-api:2.0.0-alpha1",
+		"org.slf4j:slf4j-simple:2.0.0-alpha1",
 		"org.yaml:snakeyaml:1.28",
 
 		# JUnit 5
@@ -66,7 +66,6 @@ maven_install(
         "org.junit.platform:junit-platform-suite-api:"+ JUNIT5_PLATFORM_VERSION,
     ],
     repositories = [
-	    "https://maven.google.com",
 	    "https://repo1.maven.org/maven2",
     ],
     maven_install_json = "@bazel_maven_proxy//:maven_install.json",
