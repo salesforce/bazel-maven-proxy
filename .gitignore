@@ -25,6 +25,7 @@ hs_err_pid*
 # log files
 *.log
 
+
 # Mac
 .DS_Store
 .Trashes
@@ -34,3 +35,4 @@ hs_err_pid*
 *.rej
 *.bak
 .*.swp
+*.pid
