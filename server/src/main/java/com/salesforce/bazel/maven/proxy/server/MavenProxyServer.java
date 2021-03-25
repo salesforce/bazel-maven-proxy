@@ -46,7 +46,7 @@ public class MavenProxyServer implements Callable<Void> {
 	private static final Logger LOG = LoggerFactory.getLogger(MavenProxyServer.class);
 
 	public static void main(String[] args) {
-		CommandLine.call(new MavenProxyServer(), args);
+		System.exit(new CommandLine(new MavenProxyServer()).execute(args));
 	}
 
 	@Option(names = { "-p", "--port" }, description = "port to listen on (HTTP/2 and HTTP 1.1 with self-sign 'localhost' certificate)", defaultValue = "8499")
@@ -163,6 +163,11 @@ public class MavenProxyServer implements Callable<Void> {
 		handler.addServlet(proxyServlet, format("%s/*", prefix));
 	}
 
+	private void registerServletForMavenRepositoryList(ServletContextHandler handler, Map<String, URL> repositories) {
+		handler.setAttribute(MavenRepositoryListServlet.REPOSITORIES_MAP, repositories);
+		handler.addServlet(new ServletHolder(MavenRepositoryListServlet.class), "/maven");
+	}
+
 	private Server startJetty() throws Exception {
 		LOG.debug("Starting embedded Jetty server...");
 		Server server = createJettyServer();
@@ -205,6 +210,8 @@ public class MavenProxyServer implements Callable<Void> {
 		repositories.forEach((id, url) -> {
 			registerServletForMavenRepository(handler, id, url, credentials.get(id));
 		});
+
+		registerServletForMavenRepositoryList(handler, repositories);
 
 		server.start();
 
