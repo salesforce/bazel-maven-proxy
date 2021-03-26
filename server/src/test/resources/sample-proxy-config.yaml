@@ -12,3 +12,5 @@ mavenRepositories:
       username: hey
       password: there
 
+   server2:
+      url: https://my.2nd.maven.server

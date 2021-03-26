@@ -2,6 +2,7 @@ package com.salesforce.bazel.maven.proxy.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -42,13 +43,19 @@ public class MavenProxyServerConfigurationTest {
 		assertNotNull(proxyServerConfiguration);
 
 		assertNotNull(proxyServerConfiguration.mavenRepositories);
-		assertEquals(1, proxyServerConfiguration.mavenRepositories.size());
+		assertEquals(2, proxyServerConfiguration.mavenRepositories.size());
 
 		MavenRepository server1 = proxyServerConfiguration.mavenRepositories.get("server1");
 		assertNotNull(server1);
 		assertEquals("https://my.maven.server", server1.url);
-		assertEquals("heye", server1.username);
+		assertEquals("hey", server1.username);
 		assertEquals("there", server1.password);
+
+		MavenRepository server2 = proxyServerConfiguration.mavenRepositories.get("server2");
+		assertNotNull(server2);
+		assertEquals("https://my.2nd.maven.server", server2.url);
+		assertNull(server2.username);
+		assertNull(server2.password);
 	}
 
 }
