@@ -47,6 +47,8 @@ public class MavenProxyServerConfigurationTest {
 		MavenRepository server1 = proxyServerConfiguration.mavenRepositories.get("server1");
 		assertNotNull(server1);
 		assertEquals("https://my.maven.server", server1.url);
+		assertEquals("heye", server1.username);
+		assertEquals("there", server1.password);
 	}
 
 }

@@ -17,6 +17,9 @@ public class MavenProxyServerConfiguration {
 	public static class MavenRepository {
 
 		public String url;
+		public String username;
+		public String password;
+
 	}
 
 	public static MavenProxyServerConfiguration loadFromFile(Path configFile) throws IOException {

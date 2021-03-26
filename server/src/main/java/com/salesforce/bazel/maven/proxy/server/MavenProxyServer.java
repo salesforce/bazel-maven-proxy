@@ -30,6 +30,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.salesforce.bazel.maven.proxy.server.MavenProxyServerConfiguration.MavenRepository;
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser;
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.ServerCredentials;
 
@@ -191,11 +192,23 @@ public class MavenProxyServer implements Callable<Void> {
 				mavenRepositories.entrySet().forEach((entry) -> {
 					try {
 						String id = entry.getKey();
-						URL targetUrl = new URL(entry.getValue().url);
-						if (repositories.containsKey(entry.getKey())) {
+						MavenRepository repository = entry.getValue();
+						URL targetUrl = new URL(repository.url);
+						if (repositories.containsKey(id)) {
 							LOG.warn("Overriding repository '{}' found in Maven Settings with configuration found in config file.", id);
 						}
 						repositories.put(id, targetUrl);
+
+						if (((repository.username != null) && !repository.username.isBlank()) && ((repository.password != null) && !repository.password.isBlank())) {
+							ServerCredentials serverCredentials = new ServerCredentials();
+							serverCredentials.id = id;
+							serverCredentials.username = repository.username;
+							serverCredentials.password = repository.password;
+							if (credentials.containsKey(id)) {
+								LOG.warn("Overriding credentials for repository '{}' found in Maven Settings with configuration found in config file.", id);
+							}
+							credentials.put(id, serverCredentials);
+						}
 					} catch (Exception e) {
 						throw new IllegalArgumentException(format("Invalid repository entry in proxy configuration: %s - %s", entry.getKey(), e.getMessage()), e);
 					}

@@ -8,4 +8,7 @@ mavenRepositories:
    # - used to lookup username/password info from Maven's ~/.m2/settings.xml
    server1:
       url: https://my.maven.server
+      # optional authentication information
+      username: hey
+      password: there
 
