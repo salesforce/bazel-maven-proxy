@@ -72,5 +72,7 @@ maven_install(
 )
 
 # load pinned dependencies
+# update with:
+#   bazel run @unpinned_maven//:pin
 load("@maven//:defs.bzl", "pinned_maven_install")
 pinned_maven_install()
