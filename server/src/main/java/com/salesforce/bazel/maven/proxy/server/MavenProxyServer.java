@@ -1,6 +1,7 @@
 package com.salesforce.bazel.maven.proxy.server;
 
 import static java.lang.String.format;
+import static java.nio.file.Files.isRegularFile;
 import static java.nio.file.Paths.get;
 
 import java.io.IOException;
@@ -56,6 +57,9 @@ public class MavenProxyServer implements Callable<Void> {
 	@Option(names = { "--unsecure-port" }, description = "unsecure port to listen on (default is none, set to >0 to enable)")
 	private int unsecurePort;
 
+	@Option(names = { "--host" }, description = "host name to listen od (default is 127.0.0.1, i.e. only local connections allowed; use 0.0.0.0 to listen on all interfaces)", defaultValue = "127.0.0.1")
+	private String host;
+
 	@Option(names = { "-c", "--config-file" }, description = "proxy configuration file with additional repositories to proxy, i.e. path to proxy-config.yaml", paramLabel = "PROXY-CONFIG-YAML")
 	private Path proxyConfigFile;
 
@@ -106,17 +110,18 @@ public class MavenProxyServer implements Callable<Void> {
 		SslConnectionFactory ssl = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());
 
 		// HTTP/2 Connector
+		LOG.info("Configuring secure communication on {}:{}.", host, port);
 		ServerConnector http2Connector = new ServerConnector(server, ssl, alpn, h2, new HttpConnectionFactory(httpsConfig));
 		http2Connector.setPort(port);
-		http2Connector.setHost("127.0.0.1");
+		http2Connector.setHost(host);
 		server.addConnector(http2Connector);
 
 		// un-secure if enabled
 		if (unsecurePort > 0) {
-			LOG.warn("Configuring unsecure communication on port {}.", unsecurePort);
+			LOG.warn("Configuring unsecure communication on port {}:{}.", host, unsecurePort);
 			ServerConnector connector = new ServerConnector(server);
 			connector.setPort(unsecurePort);
-			connector.setHost("127.0.0.1");
+			connector.setHost(host);
 			server.addConnector(connector);
 		}
 
@@ -139,13 +144,18 @@ public class MavenProxyServer implements Callable<Void> {
 		}
 
 		// parse
-		new MavenSettingsXmlParser(mavenSettingsXml, (serverCredentials) -> credentials.put(serverCredentials.id, serverCredentials), (repository) -> {
-			try {
-				repositories.put(repository.id, new URL(repository.url));
-			} catch (MalformedURLException e) {
-				LOG.warn("Invalid URL in Maven Settings: {} ({}) - {}", repository.id, repository.url, e.getMessage());
-			}
-		}).parse();
+		if (isRegularFile(mavenSettingsXml)) {
+			LOG.info("Reading Maven settings found at '{}'.", mavenSettingsXml);
+			new MavenSettingsXmlParser(mavenSettingsXml, (serverCredentials) -> credentials.put(serverCredentials.id, serverCredentials), (repository) -> {
+				try {
+					repositories.put(repository.id, new URL(repository.url));
+				} catch (MalformedURLException e) {
+					LOG.warn("Invalid URL in Maven Settings: {} ({}) - {}", repository.id, repository.url, e.getMessage());
+				}
+			}).parse();
+		} else {
+			LOG.info("No Maven settings found at '{}'. Proxy needs a config file.", mavenSettingsXml);
+		}
 	}
 
 	private void registerServletForMavenRepository(ServletContextHandler handler, String id, URL url, ServerCredentials serverCredentials) {
@@ -187,6 +197,7 @@ public class MavenProxyServer implements Callable<Void> {
 		readMavenSettings(credentials, repositories);
 
 		if (proxyConfigFile != null) {
+			LOG.info("Loading configuration from '{}'.", proxyConfigFile);
 			MavenProxyServerConfiguration proxyServerConfiguration = MavenProxyServerConfiguration.loadFromFile(proxyConfigFile);
 			Optional.ofNullable(proxyServerConfiguration.mavenRepositories).ifPresent((mavenRepositories) -> {
 				mavenRepositories.entrySet().forEach((entry) -> {
