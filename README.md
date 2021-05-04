@@ -29,19 +29,26 @@ Usage: bazel-maven-proxy [--local-maven-repository=PATH]
                          [-c=PROXY-CONFIG-YAML] [-p=<port>]
                          [-s=MAVEN-SETTINGS-XML]
 Starts the Bazel Maven Proxy
-      --local-maven-repository=PATH
-                      path to Maven's local repositorty (default: ~/.m2/repository/)
-      --unsecure-port=<unsecurePort>
-                      unsecure port to listen on (default is none, set to >0 to
-                        enable)
   -c, --config-file=PROXY-CONFIG-YAML
-                      proxy configuration file with additional repositories to
+                      proxy configuration file with (additional) repositories to
                         proxy, i.e. path to proxy-config.yaml
+  -h, --help          Show this help message and exit.
+      --host=<host>   host name to listen on (default is 127.0.0.1, i.e. only
+                        local connections allowed; use 0.0.0.0 to listen on all
+                        interfaces)
+      --local-maven-repository=PATH
+                      path to Maven's local repository (default: ~/.
+                        m2/repository/)
   -p, --port=<port>   port to listen on (HTTP/2 and HTTP 1.1 with self-sign
                         'localhost' certificate)
   -s, --maven-settings=MAVEN-SETTINGS-XML
                       path to Maven's settings.xml to read repositories and
-                        authentication informatiom from (default: ~/.m2/settings.xml)
+                        authentication information (default is ~/.
+                        m2/settings.xml)
+      --unsecure-port=<unsecurePort>
+                      non-secure (plain HTTP) port to listen on (default is none, set to >0 to
+                        enable)
+  -V, --version       Print version information and exit.
 ```
 
 ## How to Use
@@ -85,3 +92,6 @@ Please ensure that your `~/.m2/settings.xml` has an entry for your repository li
 ```
 
 Then in Bazel (or anywhere else) you can refer to these as `http(s)://localhost:<port>/maven/mynexus/..` and `http(s)://localhost:<port>/maven/central/..`.
+
+Alternatively to (or in addition to) `~/.m2/settings.xml` one can also provide a YAML configuration file.
+See an example [here](server/src/test/resources/sample-proxy-config.yaml) for syntax.

@@ -54,19 +54,19 @@ public class MavenProxyServer implements Callable<Void> {
 	@Option(names = { "-p", "--port" }, description = "port to listen on (HTTP/2 and HTTP 1.1 with self-sign 'localhost' certificate)", defaultValue = "8499")
 	private int port;
 
-	@Option(names = { "--unsecure-port" }, description = "unsecure port to listen on (default is none, set to >0 to enable)")
+	@Option(names = { "--unsecure-port" }, description = "non-secure (plain HTTP) port to listen on (default is none, set to >0 to enable)")
 	private int unsecurePort;
 
-	@Option(names = { "--host" }, description = "host name to listen od (default is 127.0.0.1, i.e. only local connections allowed; use 0.0.0.0 to listen on all interfaces)", defaultValue = "127.0.0.1")
+	@Option(names = { "--host" }, description = "host name to listen on (default is 127.0.0.1, i.e. only local connections allowed; use 0.0.0.0 to listen on all interfaces)", defaultValue = "127.0.0.1")
 	private String host;
 
-	@Option(names = { "-c", "--config-file" }, description = "proxy configuration file with additional repositories to proxy, i.e. path to proxy-config.yaml", paramLabel = "PROXY-CONFIG-YAML")
+	@Option(names = { "-c", "--config-file" }, description = "proxy configuration file with (additional) repositories to proxy, i.e. path to proxy-config.yaml", paramLabel = "PROXY-CONFIG-YAML")
 	private Path proxyConfigFile;
 
-	@Option(names = { "-s", "--maven-settings" }, description = "path to Maven's settings.xml to read repositories and authentication informatiom from (default: ~/.m2/settings.xml)", paramLabel = "MAVEN-SETTINGS-XML")
+	@Option(names = { "-s", "--maven-settings" }, description = "path to Maven's settings.xml to read repositories and authentication information (default is ~/.m2/settings.xml)", paramLabel = "MAVEN-SETTINGS-XML")
 	private Path mavenSettingsXml;
 
-	@Option(names = { "--local-maven-repository" }, description = "path to Maven's local repositorty (default: ~/.m2/repository/)", paramLabel = "PATH")
+	@Option(names = { "--local-maven-repository" }, description = "path to Maven's local repository (default: ~/.m2/repository/)", paramLabel = "PATH")
 	private Path mavenLocalRepositoryPath;
 
 	@Override
