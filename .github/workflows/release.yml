@@ -31,7 +31,7 @@ jobs:
         "${GITHUB_WORKSPACE}/bin/bazel" test //...
     - name: Build
       run: |
-        "${GITHUB_WORKSPACE}/bin/bazel" build //...
+        "${GITHUB_WORKSPACE}/bin/bazel" build :maven_proxy_deploy.jar
     - name: Release
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
@@ -41,4 +41,4 @@ jobs:
         title: "Development Build"
         files: |
           LICENSE
-          *.jar
+          bazel-bin/maven_proxy_deploy.jar
