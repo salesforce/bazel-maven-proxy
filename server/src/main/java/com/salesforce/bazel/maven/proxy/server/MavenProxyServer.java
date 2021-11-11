@@ -8,10 +8,16 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import javax.xml.stream.XMLStreamException;
@@ -33,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import com.salesforce.bazel.maven.proxy.server.MavenProxyServerConfiguration.MavenRepository;
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser;
+import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.Mirror;
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.ServerCredentials;
 
 import picocli.CommandLine;
@@ -146,13 +153,62 @@ public class MavenProxyServer implements Callable<Void> {
 		// parse
 		if (isRegularFile(mavenSettingsXml)) {
 			LOG.info("Reading Maven settings found at '{}'.", mavenSettingsXml);
+			List<Mirror> mirrors = new ArrayList<>();
 			new MavenSettingsXmlParser(mavenSettingsXml, (serverCredentials) -> credentials.put(serverCredentials.id, serverCredentials), (repository) -> {
 				try {
 					repositories.put(repository.id, new URL(repository.url));
 				} catch (MalformedURLException e) {
 					LOG.warn("Invalid URL in Maven Settings: {} ({}) - {}", repository.id, repository.url, e.getMessage());
 				}
-			}).parse();
+			}, mirrors::add).parse();
+
+			// always inject 'central'
+			if (!repositories.containsKey("central")) {
+				repositories.put("central", new URL("https://repo.maven.apache.org/maven2"));
+			}
+
+			// basic mirror processing
+			if (!mirrors.isEmpty()) {
+				// replace repository urls with mirror urls when needed
+				for (Entry<String, URL> repository : repositories.entrySet()) {
+					String repositoryId = repository.getKey();
+
+					// check for a mirror
+					for (Mirror mirror : mirrors) {
+						// see
+						// https://maven.apache.org/guides/mini/guide-mirror-settings.html
+						// for Advanced Mirror Specification
+						Set<String> mirroredRepositoryIds = new LinkedHashSet<>(Arrays.asList(mirror.mirrorOf.split(",")));
+						if (mirroredRepositoryIds.contains(repositoryId) // direct
+																			// mirror
+								|| (mirroredRepositoryIds.contains("*") && !mirroredRepositoryIds.contains("!" + repositoryId)) // indirect
+																																// mirror
+																																// (via
+																																// *
+																																// but
+																																// no
+																																// exclusion)
+						) {
+							try {
+								// update repository URL
+								repository.setValue(new URL(mirror.url));
+								// log result (when URL was parsed without
+								// error)
+								LOG.info("Found mirror '{}' in Maven settings for repository '{}'", mirror.id, repositoryId);
+								// ensure mirror credentials are mapped to
+								// repository because of updated url
+								if (credentials.containsKey(mirror.id)) {
+									LOG.debug("Overriding repository '{}' credentials with credentials for mirror '{}'", repositoryId, mirror.id);
+									credentials.put(repositoryId, credentials.get(mirror.id));
+								}
+							} catch (MalformedURLException e) {
+								LOG.warn("Invalid mirror URL in Maven Settings: {} ({}) - {}", mirror.id, mirror.url, e.getMessage());
+							}
+						}
+					}
+				}
+
+			}
 		} else {
 			LOG.info("No Maven settings found at '{}'. Proxy needs a config file.", mavenSettingsXml);
 		}

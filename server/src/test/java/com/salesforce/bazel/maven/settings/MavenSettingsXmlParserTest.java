@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.Mirror;
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.Repository;
 import com.salesforce.bazel.maven.settings.MavenSettingsXmlParser.ServerCredentials;
 
@@ -45,7 +46,8 @@ public class MavenSettingsXmlParserTest {
 	public void parsesSampleSettingsCorrectly() throws Exception {
 		List<ServerCredentials> credentials = new ArrayList<>();
 		List<Repository> repositories = new ArrayList<>();
-		new MavenSettingsXmlParser(sampleSettingsFile, credentials::add, repositories::add).parse();
+		List<Mirror> mirrors = new ArrayList<>();
+		new MavenSettingsXmlParser(sampleSettingsFile, credentials::add, repositories::add, mirrors::add).parse();
 
 		Optional<ServerCredentials> server1 = credentials.stream().filter((s) -> s.id.equals("server1")).findFirst();
 		assertTrue(server1.isPresent(), "server1 not found");
@@ -61,7 +63,15 @@ public class MavenSettingsXmlParserTest {
 		assertEquals("123", central.get().username);
 		assertEquals("456", central.get().password);
 
-		assertEquals(2, credentials.size(), "two credentials should be in list");
+		assertEquals(3, credentials.size(), "three credentials should be in list");
+
+		Optional<Mirror> mirror1 = mirrors.stream().filter((m) -> m.id.equals("mirror1")).findFirst();
+		assertTrue(mirror1.isPresent(), "mirror1 not found");
+
+		assertEquals("mirror1", mirror1.get().id);
+		assertEquals("*,!releases,!snapshots", mirror1.get().mirrorOf);
+		assertEquals("https://www.central-mirror.com/", mirror1.get().url);
+
 	}
 
 }

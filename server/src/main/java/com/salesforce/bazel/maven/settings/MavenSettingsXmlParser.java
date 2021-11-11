@@ -28,6 +28,14 @@ public class MavenSettingsXmlParser {
 		void onChildElement(String elementName) throws XMLStreamException;
 	}
 
+	public static class Mirror {
+		public String id, mirrorOf, url;
+	}
+
+	public interface MirrorHandler {
+		void onMirror(Mirror mirror);
+	}
+
 	public static class Repository {
 		public String id, url;
 	}
@@ -63,11 +71,13 @@ public class MavenSettingsXmlParser {
 	private int readElementChildrenLevel;
 	private final ServerCredentialsHandler credentialsHandler;
 	private final RepositoryHandler repositoryHandler;
+	private final MirrorHandler mirrorHandler;
 
-	public MavenSettingsXmlParser(Path settingsXmlFile, ServerCredentialsHandler credentialsHandler, RepositoryHandler repositoryHandler) {
+	public MavenSettingsXmlParser(Path settingsXmlFile, ServerCredentialsHandler credentialsHandler, RepositoryHandler repositoryHandler, MirrorHandler mirrorHandler) {
 		this.settingsXmlFile = settingsXmlFile;
 		this.credentialsHandler = credentialsHandler;
 		this.repositoryHandler = repositoryHandler;
+		this.mirrorHandler = mirrorHandler;
 	}
 
 	public void parse() throws XMLStreamException, IOException {
@@ -148,6 +158,28 @@ public class MavenSettingsXmlParser {
 		LOG.trace(prefix + format, arguments);
 	}
 
+	private void readMirror(XMLStreamReader streamReader) throws XMLStreamException {
+		Mirror mirror = new Mirror();
+
+		readElementChildren(streamReader, (childName) -> {
+			if (childName.equals("id")) {
+				mirror.id = streamReader.getElementText();
+			} else if (childName.equals("mirrorOf")) {
+				mirror.mirrorOf = streamReader.getElementText();
+			} else if (childName.equals("url")) {
+				mirror.url = streamReader.getElementText();
+			}
+		});
+
+		if ((mirror.id == null) || (mirror.mirrorOf == null) || (mirror.url == null)) {
+			LOG.trace("Ignoring incomplete mirror: {}:{}:{}", mirror.id, mirror.mirrorOf, mirror.url);
+			return;
+		}
+
+		LOG.trace("Found mirror: {}:{}:{}", mirror.id, mirror.mirrorOf, mirror.url);
+		mirrorHandler.onMirror(mirror);
+	}
+
 	private void readRepository(XMLStreamReader streamReader) throws XMLStreamException {
 		Repository repository = new Repository();
 
@@ -196,6 +228,8 @@ public class MavenSettingsXmlParser {
 				readServer(streamReader);
 			} else if (childName.equals("repository")) {
 				readRepository(streamReader);
+			} else if (childName.equals("mirror")) {
+				readMirror(streamReader);
 			}
 		});
 	}
