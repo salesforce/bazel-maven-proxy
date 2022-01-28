@@ -49,6 +49,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.HttpOutput;
@@ -65,6 +68,22 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class MavenProxyServlet extends HttpServlet {
+
+	static final class CachedResponse {
+		static long ttl = 1000 * 60 * 60 * 12; // 12h
+
+		final long timestamp;
+		final int responseCode;
+
+		public CachedResponse(int responseCode) {
+			this.responseCode = responseCode;
+			timestamp = System.currentTimeMillis();
+		}
+
+		public boolean isExpired() {
+			return (System.currentTimeMillis() - timestamp) > ttl;
+		}
+	}
 
 	/**
 	 * Streams from and {@link InputStream} to {@link ServletOutputStream}
@@ -109,9 +128,9 @@ public class MavenProxyServlet extends HttpServlet {
 		}
 	}
 
+	public static final String NON_RECOVERABLE_ERROR_CACHE_TTL = "nonRecoverableErrorCacheTtl";
 	public static final String PROXY_TO = "proxyTo";
 	public static final String USERNAME = "username";
-
 	public static final String PASSWORD = "password";
 
 	private static final Logger LOG = LoggerFactory.getLogger(MavenProxyServlet.class);
@@ -125,6 +144,8 @@ public class MavenProxyServlet extends HttpServlet {
 	private HttpClient httpClient;
 
 	private MavenRepositoryCache mavenCache;
+
+	private final ConcurrentMap<String, CachedResponse> noneRecoverableErrorsByTargetCache = new ConcurrentHashMap<>();
 
 	private void copyHeaders(HttpServletRequest clientRequest, java.net.http.HttpRequest.Builder requestBuilder) {
 		Enumeration<String> headerNames = clientRequest.getHeaderNames();
@@ -186,6 +207,16 @@ public class MavenProxyServlet extends HttpServlet {
 		if (targetMavenRepository == null)
 			throw new UnavailableException("Init parameter 'proxyTo' is required.");
 
+		String nonRecoverableErrorCacheTtlValue = getServletConfig().getInitParameter(NON_RECOVERABLE_ERROR_CACHE_TTL);
+		if (nonRecoverableErrorCacheTtlValue != null) {
+			try {
+				CachedResponse.ttl = TimeUnit.MINUTES.toMillis(Integer.parseInt(nonRecoverableErrorCacheTtlValue));
+				LOG.debug("Non-recoverable errors from upstream will be cached for {} minutes.", nonRecoverableErrorCacheTtlValue);
+			} catch (NumberFormatException e) {
+				throw new UnavailableException("Init parameter 'nonRecoverableErrorCacheTtl' is set to an unparable value: " + e.getMessage());
+			}
+		}
+
 		mavenCache = (MavenRepositoryCache) getServletConfig().getServletContext().getAttribute(MavenRepositoryCache.class.getName());
 
 		String username = getServletConfig().getInitParameter(USERNAME);
@@ -196,6 +227,11 @@ public class MavenProxyServlet extends HttpServlet {
 				@Override
 				protected PasswordAuthentication getPasswordAuthentication() {
 					return passwordAuthentication;
+				}
+
+				@Override
+				public String toString() {
+					return username + ":<password>";
 				}
 			};
 		}
@@ -249,10 +285,21 @@ public class MavenProxyServlet extends HttpServlet {
 			LOG.debug("{} rewriting: {} -> {}", getRequestId(clientRequest), target, rewrittenTarget);
 		}
 
+		CachedResponse cachedResponse = noneRecoverableErrorsByTargetCache.get(rewrittenTarget);
+		if (cachedResponse != null) {
+			if (cachedResponse.isExpired()) {
+				noneRecoverableErrorsByTargetCache.remove(rewrittenTarget, cachedResponse);
+			} else {
+				LOG.debug("{} cached response: {} -> {}", getRequestId(clientRequest), rewrittenTarget, cachedResponse.responseCode);
+				clientResponse.sendError(cachedResponse.responseCode);
+				return;
+			}
+		}
+
 		HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().method(clientRequest.getMethod(), BodyPublishers.noBody()).uri(URI.create(rewrittenTarget)).timeout(Duration.ofSeconds(10));
 		copyHeaders(clientRequest, requestBuilder);
 
-		sendProxyRequest(clientRequest, clientResponse, requestBuilder.build());
+		sendProxyRequest(clientRequest, clientResponse, requestBuilder.build(), rewrittenTarget);
 	}
 
 	private String rewriteTarget(HttpServletRequest clientRequest) throws ServletException {
@@ -274,7 +321,7 @@ public class MavenProxyServlet extends HttpServlet {
 		return uri.toString();
 	}
 
-	private void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse clientResponse, HttpRequest proxyRequest) throws IOException {
+	private void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse clientResponse, HttpRequest proxyRequest, String rewrittenTarget) throws IOException {
 		if (LOG.isDebugEnabled()) {
 			StringBuilder clientRequestInfo = new StringBuilder(clientRequest.getMethod());
 			clientRequestInfo.append(" ").append(clientRequest.getRequestURI());
@@ -354,6 +401,10 @@ public class MavenProxyServlet extends HttpServlet {
 			httpClient.sendAsync(proxyRequest, BodyHandlers.ofInputStream()).thenAccept(response -> {
 				clientResponse.setStatus(response.statusCode());
 				copyHeaders(clientResponse, response);
+
+				if (response.statusCode() == 404) {
+					noneRecoverableErrorsByTargetCache.put(rewrittenTarget, new CachedResponse(404));
+				}
 
 				InputStream body = response.body();
 				clientOutputStream.setWriteListener(new StandardDataStream(body, asyncContext, clientOutputStream));

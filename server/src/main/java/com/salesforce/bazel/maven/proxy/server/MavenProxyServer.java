@@ -76,6 +76,9 @@ public class MavenProxyServer implements Callable<Void> {
 	@Option(names = { "--local-maven-repository" }, description = "path to Maven's local repository (default: ~/.m2/repository/)", paramLabel = "PATH")
 	private Path mavenLocalRepositoryPath;
 
+	@Option(names = { "--non-recoverable-error-cache-ttl" }, description = "TTL in minutes of non-recoverable error responses from the proxied Maven servers (eg., 404 errors, default is 12h)", defaultValue = "720")
+	private int nonRecoverableErrorCacheTtl;
+
 	@Override
 	public Void call() throws Exception {
 		// configure and start Jetty
@@ -223,6 +226,7 @@ public class MavenProxyServer implements Callable<Void> {
 		ServletHolder proxyServlet = new ServletHolder(MavenProxyServlet.class);
 		proxyServlet.setInitParameter(MavenProxyServlet.PROXY_TO, proxyTo);
 		proxyServlet.setInitParameter("prefix", prefix);
+		proxyServlet.setInitParameter(MavenProxyServlet.NON_RECOVERABLE_ERROR_CACHE_TTL, String.valueOf(nonRecoverableErrorCacheTtl));
 		if (serverCredentials != null) {
 			proxyServlet.setInitParameter(MavenProxyServlet.USERNAME, serverCredentials.username);
 			proxyServlet.setInitParameter(MavenProxyServlet.PASSWORD, serverCredentials.password);
