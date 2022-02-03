@@ -41,6 +41,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.time.Duration;
@@ -132,16 +133,32 @@ public class MavenProxyServlet extends HttpServlet {
 	public static final String PROXY_TO = "proxyTo";
 	public static final String USERNAME = "username";
 	public static final String PASSWORD = "password";
+	private static final String REQUEST_TIMEOUT_SECONDS = "requestTimeoutSeconds";
+	private static final int DEFAULT_REQUEST_TIMEOUT_SECONDS = 20;
 
 	private static final Logger LOG = LoggerFactory.getLogger(MavenProxyServlet.class);
 
 	/** serialVersionUID */
 	private static final long serialVersionUID = 1L;
 	private static final Set<String> ALLOWED_HEADERS_TO_COPY = Set.of("accept", "accept-charset", "accept-encoding", "accept-language", "cache-control", "if-match", "if-modified-since", "if-none-match", "if-range", "if-unmodified-since", "range", "te", "transfer-encoding", "user-agent");
-	private String targetMavenRepository;
 
+	static void sendError(HttpServletResponse clientResponse, int code, String message) {
+		try {
+			if (!clientResponse.isCommitted()) {
+				clientResponse.sendError(code, message);
+			}
+		} catch (IOException ioException) {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Exception writing to client", ioException);
+			}
+		}
+	}
+
+	private String targetMavenRepository;
 	private Authenticator authenticator;
 	private HttpClient httpClient;
+
+	private int requestTimeoutSeconds = DEFAULT_REQUEST_TIMEOUT_SECONDS;
 
 	private MavenRepositoryCache mavenCache;
 
@@ -201,6 +218,16 @@ public class MavenProxyServlet extends HttpServlet {
 		return System.identityHashCode(clientRequest);
 	}
 
+	private void handleError(HttpServletResponse clientResponse, HttpRequest proxyRequest, Throwable e) {
+		if (e.getCause() instanceof HttpTimeoutException) {
+			LOG.error("Timeout connecting to Maven repository {}: {}", proxyRequest.uri(), e.getMessage());
+			sendError(clientResponse, HttpStatus.SERVICE_UNAVAILABLE_503, "Timeout connecting to target Maven repository.");
+		} else {
+			LOG.error("Error connecting to Maven repository {}: {}", proxyRequest.uri(), e.getMessage(), e);
+			sendError(clientResponse, HttpStatus.INTERNAL_SERVER_ERROR_500, "Unable to connect to target Maven repository.");
+		}
+	}
+
 	@Override
 	public void init() throws ServletException {
 		targetMavenRepository = getServletConfig().getInitParameter(PROXY_TO);
@@ -218,6 +245,18 @@ public class MavenProxyServlet extends HttpServlet {
 		}
 
 		mavenCache = (MavenRepositoryCache) getServletConfig().getServletContext().getAttribute(MavenRepositoryCache.class.getName());
+
+		String requestTimeoutSecondsValue = getServletConfig().getInitParameter(REQUEST_TIMEOUT_SECONDS);
+		if (requestTimeoutSecondsValue != null) {
+			try {
+				int value = Integer.parseInt(requestTimeoutSecondsValue);
+				requestTimeoutSeconds = value > 0 ? value : DEFAULT_REQUEST_TIMEOUT_SECONDS;
+			} catch (NumberFormatException e) {
+				requestTimeoutSeconds = DEFAULT_REQUEST_TIMEOUT_SECONDS;
+			}
+		} else {
+			requestTimeoutSeconds = DEFAULT_REQUEST_TIMEOUT_SECONDS;
+		}
 
 		String username = getServletConfig().getInitParameter(USERNAME);
 		String password = getServletConfig().getInitParameter(PASSWORD);
@@ -296,7 +335,7 @@ public class MavenProxyServlet extends HttpServlet {
 			}
 		}
 
-		HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().method(clientRequest.getMethod(), BodyPublishers.noBody()).uri(URI.create(rewrittenTarget)).timeout(Duration.ofSeconds(10));
+		HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().method(clientRequest.getMethod(), BodyPublishers.noBody()).uri(URI.create(rewrittenTarget)).timeout(Duration.ofSeconds(requestTimeoutSeconds));
 		copyHeaders(clientRequest, requestBuilder);
 
 		sendProxyRequest(clientRequest, clientResponse, requestBuilder.build(), rewrittenTarget);
@@ -381,14 +420,7 @@ public class MavenProxyServlet extends HttpServlet {
 			httpClient.sendAsync(proxyRequest, BodyHandlers.discarding()).whenComplete((response, e) -> {
 				try {
 					if (e != null) {
-						LOG.error("Error connecting to Maven repository {}: {}", proxyRequest.uri(), e.getMessage(), e);
-						try {
-							clientResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR_500, "Unable to connect to target Maven repository.");
-						} catch (IOException ioException) {
-							if (LOG.isDebugEnabled()) {
-								LOG.debug("Exception writing to client", ioException);
-							}
-						}
+						handleError(clientResponse, proxyRequest, e);
 					} else {
 						clientResponse.setStatus(response.statusCode());
 						copyHeaders(clientResponse, response);
@@ -409,15 +441,8 @@ public class MavenProxyServlet extends HttpServlet {
 				InputStream body = response.body();
 				clientOutputStream.setWriteListener(new StandardDataStream(body, asyncContext, clientOutputStream));
 			}).exceptionally(e -> {
-				LOG.error("Error connecting to Maven repository {}: {}", proxyRequest.uri(), e.getMessage(), e);
 				try {
-					if (!clientResponse.isCommitted()) {
-						clientResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR_500, "Unable to connect to target Maven repository.");
-					}
-				} catch (IOException ioException) {
-					if (LOG.isDebugEnabled()) {
-						LOG.debug("Exception writing to client", ioException);
-					}
+					handleError(clientResponse, proxyRequest, e);
 				} finally {
 					asyncContext.complete();
 				}
